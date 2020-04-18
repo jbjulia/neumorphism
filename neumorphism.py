@@ -10,7 +10,7 @@ class NeumorphismEffect(QtWidgets.QGraphicsEffect):
     _cornerShift = (QtCore.Qt.TopLeftCorner, QtCore.Qt.TopRightCorner,
                     QtCore.Qt.BottomRightCorner, QtCore.Qt.BottomLeftCorner)
 
-    def __init__(self, distance=4, color=None, origin=QtCore.Qt.TopLeftCorner, clipRadius=0):
+    def __init__(self, distance=16, color=None, origin=QtCore.Qt.TopLeftCorner, clipRadius=0):
         super().__init__()
 
         self._leftGradient = QtGui.QLinearGradient(1, 0, 0, 0)
