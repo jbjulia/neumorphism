@@ -5,12 +5,12 @@ class NeumorphismEffect(QtWidgets.QGraphicsEffect):
     originChanged = QtCore.pyqtSignal(QtCore.Qt.Corner)
     distanceChanged = QtCore.pyqtSignal(float)
     colorChanged = QtCore.pyqtSignal(QtGui.QColor)
-    clip_radiusChanged = QtCore.pyqtSignal(int)
+    clipRadiusChanged = QtCore.pyqtSignal(int)
 
     _cornerShift = (QtCore.Qt.TopLeftCorner, QtCore.Qt.TopRightCorner,
                     QtCore.Qt.BottomRightCorner, QtCore.Qt.BottomLeftCorner)
 
-    def __init__(self, distance=4, color=None, origin=QtCore.Qt.TopLeftCorner, clip_radius=0):
+    def __init__(self, distance=4, color=None, origin=QtCore.Qt.TopLeftCorner, clipRadius=0):
         super().__init__()
 
         self._leftGradient = QtGui.QLinearGradient(1, 0, 0, 0)
@@ -30,16 +30,16 @@ class NeumorphismEffect(QtWidgets.QGraphicsEffect):
 
         self._origin = origin
         distance = max(0, distance)
-        self._clip_radius = min(distance, max(0, clip_radius))
-        self._set_color(color or QtWidgets.QApplication.palette().color(QtGui.QPalette.Window))
-        self._set_distance(distance)
+        self._clipRadius = min(distance, max(0, clipRadius))
+        self._setColor(color or QtWidgets.QApplication.palette().color(QtGui.QPalette.Window))
+        self._setDistance(distance)
 
     def color(self):
         return self._color
 
     @QtCore.pyqtSlot(QtGui.QColor)
     @QtCore.pyqtSlot(QtCore.Qt.GlobalColor)
-    def set_color(self, color):
+    def setColor(self, color):
         if isinstance(color, QtCore.Qt.GlobalColor):
             color = QtGui.QColor(color)
         if color == self._color:
@@ -49,7 +49,7 @@ class NeumorphismEffect(QtWidgets.QGraphicsEffect):
         self.update()
         self.colorChanged.emit(self._color)
 
-    def _set_color(self, color):
+    def _setColor(self, color):
         self._color = color
         self._baseStart = color.lighter(125)
         self._baseStop = QtGui.QColor(self._baseStart)
@@ -68,24 +68,24 @@ class NeumorphismEffect(QtWidgets.QGraphicsEffect):
     def distance(self):
         return self._distance
 
-    def set_distance(self, distance):
+    def setDistance(self, distance):
         if distance == self._distance:
             return
-        old_radius = self._clip_radius
+        oldRadius = self._clipRadius
         self._setDistance(distance)
         self.updateBoundingRect()
         self.distanceChanged.emit(self._distance)
-        if old_radius != self._clip_radius:
-            self.clip_radiusChanged.emit(self._clip_radius)
+        if oldRadius != self._clipRadius:
+            self.clipRadiusChanged.emit(self._clipRadius)
 
-    def _get_corner_pixmap(self, rect, grad1, grad2=None):
-        pm = QtGui.QPixmap(self._distance + self._clip_radius, self._distance + self._clip_radius)
+    def _getCornerPixmap(self, rect, grad1, grad2=None):
+        pm = QtGui.QPixmap(self._distance + self._clipRadius, self._distance + self._clipRadius)
         pm.fill(QtCore.Qt.transparent)
         qp = QtGui.QPainter(pm)
-        if self._clip_radius > 1:
+        if self._clipRadius > 1:
             path = QtGui.QPainterPath()
             path.addRect(rect)
-            size = self._clip_radius * 2 - 1
+            size = self._clipRadius * 2 - 1
             mask = QtCore.QRectF(0, 0, size, size)
             mask.moveCenter(rect.center())
             path.addEllipse(mask)
@@ -97,38 +97,38 @@ class NeumorphismEffect(QtWidgets.QGraphicsEffect):
         qp.end()
         return pm
 
-    def _set_distance(self, distance):
+    def _setDistance(self, distance):
         distance = max(1, distance)
         self._distance = distance
-        if self._clip_radius > distance:
-            self._clip_radius = distance
-        distance += self._clip_radius
+        if self._clipRadius > distance:
+            self._clipRadius = distance
+        distance += self._clipRadius
         r = QtCore.QRectF(0, 0, distance * 2, distance * 2)
 
-        light_side_stops = self.lightSideStops[:]
-        shadow_side_stops = self.shadowSideStops[:]
-        if self._clip_radius:
-            grad_start = self._clip_radius / (self._distance + self._clip_radius)
-            light_side_stops[0] = (grad_start, light_side_stops[0][1])
-            shadow_side_stops[0] = (grad_start, shadow_side_stops[0][1])
+        lightSideStops = self.lightSideStops[:]
+        shadowSideStops = self.shadowSideStops[:]
+        if self._clipRadius:
+            gradStart = self._clipRadius / (self._distance + self._clipRadius)
+            lightSideStops[0] = (gradStart, lightSideStops[0][1])
+            shadowSideStops[0] = (gradStart, shadowSideStops[0][1])
 
         # create the 4 corners as if the light source was top-left
-        self._radial.setStops(light_side_stops)
-        top_left = self._getCornerPixmap(r, self._radial)
+        self._radial.setStops(lightSideStops)
+        topLeft = self._getCornerPixmap(r, self._radial)
 
         self._conical.setAngle(359.9)
         self._conical.setStops(self.cornerStops)
-        top_right = self._getCornerPixmap(r.translated(-distance, 0), self._radial, self._conical)
+        topRight = self._getCornerPixmap(r.translated(-distance, 0), self._radial, self._conical)
 
         self._conical.setAngle(270)
         self._conical.setStops(self.cornerStops)
-        bottom_left = self._getCornerPixmap(r.translated(0, -distance), self._radial, self._conical)
+        bottomLeft = self._getCornerPixmap(r.translated(0, -distance), self._radial, self._conical)
 
-        self._radial.setStops(shadow_side_stops)
-        bottom_right = self._getCornerPixmap(r.translated(-distance, -distance), self._radial)
+        self._radial.setStops(shadowSideStops)
+        bottomRight = self._getCornerPixmap(r.translated(-distance, -distance), self._radial)
 
         # rotate the images according to the actual light source
-        images = top_left, top_right, bottom_right, bottom_left
+        images = topLeft, topRight, bottomRight, bottomLeft
         shift = self._cornerShift.index(self._origin)
         if shift:
             transform = QtGui.QTransform().rotate(shift * 90)
@@ -142,7 +142,7 @@ class NeumorphismEffect(QtWidgets.QGraphicsEffect):
         return self._origin
 
     @QtCore.pyqtSlot(QtCore.Qt.Corner)
-    def set_origin(self, origin):
+    def setOrigin(self, origin):
         origin = QtCore.Qt.Corner(origin)
         if origin == self._origin:
             return
@@ -151,7 +151,7 @@ class NeumorphismEffect(QtWidgets.QGraphicsEffect):
         self.update()
         self.originChanged.emit(self._origin)
 
-    def _set_origin(self, origin):
+    def _setOrigin(self, origin):
         self._origin = origin
 
         gradients = self._leftGradient, self._topGradient, self._rightGradient, self._bottomGradient
@@ -162,23 +162,23 @@ class NeumorphismEffect(QtWidgets.QGraphicsEffect):
         for grad, stops in zip(gradients, stops[-shift:] + stops[:-shift]):
             grad.setStops(stops)
 
-    def clip_radius(self):
-        return self._clip_radius
+    def clipRadius(self):
+        return self._clipRadius
 
     @QtCore.pyqtSlot(int)
     @QtCore.pyqtSlot(float)
-    def set_clip_radius(self, radius):
-        if radius == self._clip_radius:
+    def setClipRadius(self, radius):
+        if radius == self._clipRadius:
             return
-        old_radius = self._clip_radius
-        self._setclip_radius(radius)
+        oldRadius = self._clipRadius
+        self._setClipRadius(radius)
         self.update()
-        if old_radius != self._clip_radius:
-            self.clip_radiusChanged.emit(self._clip_radius)
+        if oldRadius != self._clipRadius:
+            self.clipRadiusChanged.emit(self._clipRadius)
 
-    def _set_clip_radius(self, radius):
+    def _setClipRadius(self, radius):
         radius = min(self._distance, max(0, int(radius)))
-        self._clip_radius = radius
+        self._clipRadius = radius
         self._setDistance(self._distance)
 
     def boundingRectFor(self, rect):
@@ -186,46 +186,46 @@ class NeumorphismEffect(QtWidgets.QGraphicsEffect):
         return rect.adjusted(-d, -d, d, d)
 
     def draw(self, qp):
-        restore_transform = qp.worldTransform()
+        restoreTransform = qp.worldTransform()
 
         qp.setPen(QtCore.Qt.NoPen)
         x, y, width, height = self.sourceBoundingRect(QtCore.Qt.DeviceCoordinates).getRect()
         right = x + width
         bottom = y + height
-        clip = self._clip_radius
-        double_clip = clip * 2
+        clip = self._clipRadius
+        doubleClip = clip * 2
 
         qp.setWorldTransform(QtGui.QTransform())
-        left_rect = QtCore.QRectF(x - self._distance, y + clip, self._distance, height - double_clip)
+        leftRect = QtCore.QRectF(x - self._distance, y + clip, self._distance, height - doubleClip)
         qp.setBrush(self._leftGradient)
-        qp.drawRect(left_rect)
+        qp.drawRect(leftRect)
 
-        top_rect = QtCore.QRectF(x + clip, y - self._distance, width - double_clip, self._distance)
+        topRect = QtCore.QRectF(x + clip, y - self._distance, width - doubleClip, self._distance)
         qp.setBrush(self._topGradient)
-        qp.drawRect(top_rect)
+        qp.drawRect(topRect)
 
-        right_rect = QtCore.QRectF(right, y + clip, self._distance, height - double_clip)
+        rightRect = QtCore.QRectF(right, y + clip, self._distance, height - doubleClip)
         qp.setBrush(self._rightGradient)
-        qp.drawRect(right_rect)
+        qp.drawRect(rightRect)
 
-        bottom_rect = QtCore.QRectF(x + clip, bottom, width - double_clip, self._distance)
+        bottomRect = QtCore.QRectF(x + clip, bottom, width - doubleClip, self._distance)
         qp.setBrush(self._bottomGradient)
-        qp.drawRect(bottom_rect)
+        qp.drawRect(bottomRect)
 
         qp.drawPixmap(x - self._distance, y - self._distance, self.topLeft)
         qp.drawPixmap(right - clip, y - self._distance, self.topRight)
         qp.drawPixmap(right - clip, bottom - clip, self.bottomRight)
         qp.drawPixmap(x - self._distance, bottom - clip, self.bottomLeft)
 
-        qp.setWorldTransform(restore_transform)
-        if self._clip_radius:
+        qp.setWorldTransform(restoreTransform)
+        if self._clipRadius:
             path = QtGui.QPainterPath()
             source, offset = self.sourcePixmap(QtCore.Qt.DeviceCoordinates)
 
-            source_bounding_rect = self.sourceBoundingRect(QtCore.Qt.DeviceCoordinates)
+            sourceBoundingRect = self.sourceBoundingRect(QtCore.Qt.DeviceCoordinates)
             qp.save()
             qp.setTransform(QtGui.QTransform())
-            path.addRoundedRect(source_bounding_rect, self._clip_radius, self._clip_radius)
+            path.addRoundedRect(sourceBoundingRect, self._clipRadius, self._clipRadius)
             qp.setClipPath(path)
             qp.drawPixmap(source.rect().translated(offset), source)
             qp.restore()
