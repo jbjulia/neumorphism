@@ -31,8 +31,8 @@ class NeumorphismEffect(QtWidgets.QGraphicsEffect):
         self._origin = origin
         distance = max(0, distance)
         self._clip_radius = min(distance, max(0, clip_radius))
-        self._setColor(color or QtWidgets.QApplication.palette().color(QtGui.QPalette.Window))
-        self._setDistance(distance)
+        self._set_color(color or QtWidgets.QApplication.palette().color(QtGui.QPalette.Window))
+        self._set_distance(distance)
 
     def color(self):
         return self._color
