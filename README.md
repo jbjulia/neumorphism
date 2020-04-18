@@ -1,7 +1,7 @@
 #Neumorpishm
 _The next UI trend, done Pythonically_  
   
-**Requirements:** _Python3, PyQt5_
+**Requirements:** _Python3, PyQt5_  
 **How to Use:** _setGraphicsEffect(neumorphism.NeumorphismEffect())_  
   
 This code was compiled from a range of sources in an attempt to mirror  
@@ -13,4 +13,4 @@ gradients. At this time, only rectangular borders are supported.
   
 And here is the special formula!  
 
-![Alt text](/images/Specs.png)  
+![Alt text](/images/Specs.jpeg)  
